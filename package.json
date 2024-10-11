@@ -1,0 +1,26 @@
+{
+  "name": "streams",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "start": "concurrently --kill-others \"pnpm start:server\" \"pnpm reload\"",
+    "start:server": "nodemon src/server.js",
+    "reload": "node live-reload.js"
+  },
+  "type": "module",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.19.2",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.7.0",
+    "chokidar": "^3.6.0",
+    "concurrently": "^9.0.1",
+    "eslint": "~9.7.0",
+    "globals": "^15.8.0",
+    "nodemon": "^3.1.4"
+  }
+}
