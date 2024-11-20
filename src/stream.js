@@ -1,38 +1,40 @@
 import { wait } from "../public/utils.js";
+import { readFileSync } from "node:fs";
+
+//controller.enqueue(readFileSync("./public/lorem.txt"));
 
 export const getStream = () => {
   return new ReadableStream({
     async start(controller) {
-      controller.enqueue("Loading");
-      for (let i = 0; i < 100; i += 1) {
-        await wait(20);
-        controller.enqueue(".");
+      for (let i = 0; i < 50; ++i) {
+        controller.enqueue("Chunk " + i + "\n");
+        await wait(100);
       }
-      controller.enqueue("Done :)");
       controller.close();
     },
   });
 };
 
 export const getTeeingStream = () => {
-  const chunks = ["I\n", "AM\n", "BEING\n", "COPIED ", "! ", "! ", "! \n"];
+  const source = ["I\n", "AM\n", "BEING\n", "LOGGED ", "! ", "! ", "! \n"];
   return new ReadableStream({
     async start(controller) {
-      for (let i = 0; i < chunks.length; i += 1) {
+      for (let i = 0; i < source.length; i += 1) {
         await wait(100);
-        controller.enqueue(chunks[i]);
+        controller.enqueue(source[i]);
       }
       controller.close();
     },
   });
 };
-
+//
 export const getTransformStream = () => {
   return new ReadableStream({
     async start(controller) {
+      controller.enqueue("Input:- ");
       for (let i = 65; i < 91; i += 1) {
-        await wait(20);
         controller.enqueue(new Uint8Array([i]));
+        await wait(30);
       }
       controller.close();
     },

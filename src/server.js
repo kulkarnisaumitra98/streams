@@ -1,6 +1,6 @@
 import express from "express";
 import path from "path";
-import { Readable } from "stream";
+import { Readable, Stream, Writable } from "stream";
 import { getStream, getTeeingStream, getTransformStream } from "./stream.js";
 import { wait } from "../public/utils.js";
 
@@ -14,14 +14,15 @@ app.get("/", (req, res) => {
 });
 
 // Creating a simple Readable Stream
-app.get("/streaming", async (req, res) => {
+app.get("/streaming", (req, res) => {
   const stream = getStream();
-  Readable.fromWeb(stream).pipe(res);
+  stream.pipeTo(Writable.toWeb(res));
 });
 
-// Teeing or copying a stream
-app.get("/teeing", async (req, res) => {
+// Teeing a stream
+app.get("/teeing", (req, res) => {
   const stream = getTeeingStream();
+
   const [debugStream, responseStream] = stream.tee();
   const reader = debugStream.getReader();
 
@@ -42,35 +43,31 @@ app.get("/teeing", async (req, res) => {
 // Transforming a stream
 app.get("/transforming", async (req, res) => {
   const stream = getTransformStream();
-  const [originalStream, transformStream] = stream.tee();
+  const [inputStream, tranformStream] = stream.tee();
 
-  const transformedStream = transformStream.pipeThrough(
-    new TransformStream({
-      async start(controller) {
-        await wait(600);
-        controller.enqueue("\n");
-        for (let i = 0; i < 100; i += 1) {
-          if (i === 50) {
-            controller.enqueue("TRANSFORMING");
-          } else {
-            controller.enqueue(".");
-          }
-          await wait(10);
-        }
-        controller.enqueue("\n");
-      },
-      async transform(chunk, controller) {
-        await wait(30);
+  const nodeWritable = Writable.toWeb(res);
+  await inputStream.pipeTo(nodeWritable, { preventClose: true });
+
+  const lowerCaseTranformStream = new TransformStream({
+    // Start
+    start(controller) {
+      controller.enqueue("\nOutput:- ");
+    },
+    // Transform
+    async transform(chunk, controller) {
+      await wait(30);
+      if (chunk instanceof Uint8Array) {
         controller.enqueue(chunk.map((i) => i + 32));
-      },
-      flush(controller) {
-        controller.terminate();
-      },
-    }),
-  );
+      }
+    },
+    // Close
+    flush(controller) {
+      controller.terminate();
+    },
+  });
 
-  Readable.fromWeb(originalStream).pipe(res, { end: false });
-  Readable.fromWeb(transformedStream).pipe(res);
+  const transformedStream = tranformStream.pipeThrough(lowerCaseTranformStream);
+  await transformedStream.pipeTo(nodeWritable);
 });
 
 app.listen(PORT, () => {

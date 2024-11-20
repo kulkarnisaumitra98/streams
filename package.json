@@ -4,6 +4,7 @@
   "description": "",
   "scripts": {
     "start": "concurrently --kill-others \"pnpm start:server\" \"pnpm reload\"",
+    "debug": "nodemon --inspect-brk src/server.js",
     "start:server": "nodemon src/server.js",
     "reload": "node live-reload.js"
   },
